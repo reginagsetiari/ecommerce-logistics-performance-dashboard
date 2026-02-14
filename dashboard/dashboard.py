@@ -3,11 +3,11 @@
 ## Import Semua Packages/Library yang Digunakan
 """
 
+import os
 import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import os
 import streamlit as st
 sns.set(style="darkgrid")
 
