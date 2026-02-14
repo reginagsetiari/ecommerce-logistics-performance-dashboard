@@ -7,6 +7,7 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 import streamlit as st
 sns.set(style="darkgrid")
 
@@ -225,9 +226,17 @@ def get_top_n_states(df, metric_col, n=3):
 
 """### Load Data"""
 
-df = pd.read_csv("orders_df_master.csv")
-customers_df = pd.read_csv("customers.csv")
-sellers_df = pd.read_csv("sellers.csv")
+# Mendapatkan path folder tempat dashboard.py berada
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Membaca file dengan path yang dinamis
+try:
+    df = pd.read_csv(os.path.join(current_dir, "orders_df_master.csv"))
+    customers_df = pd.read_csv(os.path.join(current_dir, "customers.csv"))
+    sellers_df = pd.read_csv(os.path.join(current_dir, "sellers.csv"))
+except Exception as e:
+    st.error(f"Gagal memuat data: {e}")
+    st.stop() # Hentikan aplikasi jika data tidak ditemukan
 
 """## Membuat Komponen Widget
 
