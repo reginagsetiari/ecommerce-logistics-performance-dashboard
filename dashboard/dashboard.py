@@ -226,15 +226,23 @@ def get_top_n_states(df, metric_col, n=3):
 
 """### Load Data"""
 
-try:
-    df = pd.read_csv("dashboard/orders_df_master.csv")
-    customers_df = pd.read_csv("dashboard/customers.csv")
-    sellers_df = pd.read_csv("dashboard/sellers.csv")
-except FileNotFoundError:
-    # Jika dijalankan lokal atau struktur berbeda
-    df = pd.read_csv("orders_df_master.csv")
-    customers_df = pd.read_csv("customers.csv")
-    sellers_df = pd.read_csv("sellers.csv")
+@st.cache_data # Menghindari download berulang
+def load_data(url):
+    try:
+        df = pd.read_csv(url)
+        return df
+    except Exception as e:
+        st.error(f"Gagal memuat data dari {url}: {e}")
+        return None
+
+url_df = 'https://raw.githubusercontent.com/reginagsetiari/ecommerce-logistics-performance-dashboard/main/dashboard/orders_df_master.csv' 
+url_customers = 'https://raw.githubusercontent.com/reginagsetiari/ecommerce-logistics-performance-dashboard/main/dashboard/customers.csv'
+url_sellers = 'https://raw.githubusercontent.com/reginagsetiari/ecommerce-logistics-performance-dashboard/main/dashboard/sellers.csv' 
+
+# Panggil fungsi untuk masing-masing dataset
+df = load_data(url_df)
+customers_df = load_data(url_customers)
+sellers_df = load_data(url_sellers)
 
 """## Membuat Komponen Widget
 
