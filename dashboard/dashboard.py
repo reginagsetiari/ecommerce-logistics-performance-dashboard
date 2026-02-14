@@ -225,9 +225,9 @@ def get_top_n_states(df, metric_col, n=3):
 
 """### Load Data"""
 
-df = pd.read_csv("/orders_df_master.csv")
-customers_df = pd.read_csv("/customers.csv")
-sellers_df = pd.read_csv("/sellers.csv")
+df = pd.read_csv("orders_df_master.csv")
+customers_df = pd.read_csv("customers.csv")
+sellers_df = pd.read_csv("sellers.csv")
 
 """## Membuat Komponen Widget
 
