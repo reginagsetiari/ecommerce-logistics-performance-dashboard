@@ -18,7 +18,7 @@ ratio affect customer review scores and operational performance.
 
 ---
 
-## Run steamlit app
+## Run Streamlit App
 ```
 streamlit run dashboard/dashboard.py
 
