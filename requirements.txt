@@ -1,5 +1,5 @@
-geopandas==1.1.2
-matplotlib==3.10.8
-pandas==3.0.0
-seaborn==0.13.2
-streamlit==1.54.0
+pandas
+geopandas
+matplotlib
+seaborn
+streamlit
