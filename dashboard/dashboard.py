@@ -395,7 +395,7 @@ with col1:
 
     ax.set_title("Delivery Status Distribution", pad=8)
     ax.axis("equal")
-    st.pyplot(fig, width='stretch')
+    st.pyplot(fig, use_container_width=True)
 
 with col2:
     st.markdown("### Monthly Delivery Trend")
@@ -435,7 +435,7 @@ with col2:
     fig.autofmt_xdate() # Otomatis merapikan tanggal yang miring di sumbu X
     plt.tight_layout()  # Memastikan tidak ada label yang terpotong frame
     
-    st.pyplot(fig, width='stretch')
+    st.pyplot(fig, use_container_width=True)
     st.markdown(
         """
         <p style="font-size: 10px; color: gray; line-height: 1;">
@@ -498,7 +498,7 @@ with col1:
     ax.set_title("Customer Satisfaction by Delivery Status")
     ax.grid(axis="y", linestyle="--", alpha=0.5)
 
-    st.pyplot(fig, width='stretch')
+    st.pyplot(fig, use_container_width=True)
 
 
 with col2:
@@ -546,7 +546,7 @@ with col2:
     ax.legend()
     ax.set_title("The Effect of Freight-to-Price Ratio on Customer Satisfaction (0-100%)")
     ax.grid(axis="y", linestyle="--", alpha=0.5)
-    st.pyplot(fig, width='stretch')
+    st.pyplot(fig, use_container_width=True)
     st.markdown(
         """
         <p style="font-size: 10px; color: gray; line-height: 1;">
@@ -593,7 +593,7 @@ ax.set_xlabel("Delivery Status", fontsize=10)
 ax.set_ylabel("Product Category", fontsize=10)
 
 plt.tight_layout()
-st.pyplot(fig, width='stretch')
+st.pyplot(fig, use_container_width=True)
 
 st.caption(
     ""
@@ -638,7 +638,7 @@ with col1:
             ha="left"
         )
 
-    st.pyplot(fig1, width='stretch')
+    st.pyplot(fig1, use_container_width=True)
 
 with col2:
     fig2, ax2 = plt.subplots(figsize=(8, 8))
@@ -669,7 +669,7 @@ with col2:
             ha="right"
         )
 
-    st.pyplot(fig2, width='stretch')
+    st.pyplot(fig2, use_container_width=True)
 
 st.caption(
     "Regions with higher delayed delivery rates tend to have lower seller density, "
@@ -677,3 +677,4 @@ st.caption(
     "last-mile efficiency in these regions could significantly reduce delivery delays."
 
 )
+
