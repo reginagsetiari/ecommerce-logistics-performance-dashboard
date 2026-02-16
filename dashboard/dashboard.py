@@ -1,20 +1,17 @@
 # Dashboard Analisis Data: E-Commerce Public Dataset
 
 ## Import Semua Packages/Library yang Digunakan
-"""
 
-import os
 import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
-sns.set(style="darkgrid")
+sns.set_theme(style="whitegrid", palette="pastel")
 
-"""## Menyiapkan DataFrame
+## Menyiapkan DataFrame
 
 ### Membuat Helper Function create_monthly_delivery_review_trend_df
-"""
 
 def create_monthly_delivery_composition_df(
     df,
@@ -54,13 +51,21 @@ def create_monthly_delivery_composition_df(
         .sort_index()
     )
 
+    # Pastikan ketiga status ini ada di kolom, kalau tidak ada isi dengan 0
+    expected_status = ["Lebih Cepat", "Tepat Waktu", "Terlambat"]
+    monthly_delivery_composition = monthly_delivery_composition.reindex(
+        columns=expected_status, 
+        fill_value=0
+    )
+
+    # Ubah tipe data month (index) menjadi string
     monthly_delivery_composition.index = (
         monthly_delivery_composition.index.astype(str)
     )
-
+    
     return monthly_delivery_composition
 
-"""### Membuat Helper Function create_review_by_delivery_status_df"""
+### Membuat Helper Function create_review_by_delivery_status_df
 
 def create_review_by_delivery_status_df(df):
     review_by_delivery_status = (
@@ -73,7 +78,7 @@ def create_review_by_delivery_status_df(df):
     )
     return review_by_delivery_status
 
-"""### Membuat Helper Function create_review_by_delivery_status_and_category_df"""
+### Membuat Helper Function create_review_by_delivery_status_and_category_df
 
 def create_review_by_delivery_status_and_category_df(
     df,
@@ -117,7 +122,7 @@ def create_review_by_delivery_status_and_category_df(
 
     return review_by_delivery_status_and_category
 
-"""### Membuat Helper Function create_freight_ratio_satisfaction_df"""
+### Membuat Helper Function create_freight_ratio_satisfaction_df
 
 def create_freight_ratio_satisfaction_df(
     df,
@@ -128,7 +133,7 @@ def create_freight_ratio_satisfaction_df(
     df_valid = df[df[ratio_col] != exclude_bin].copy()
 
     # Hapus kategori yang tidak terpakai
-    if pd.api.types.is_categorical_dtype(df_valid[ratio_col]):
+    if isinstance(df_valid[ratio_col].dtype, pd.CategoricalDtype):
         df_valid [ratio_col] = (
             df_valid [ratio_col]
             .cat.remove_unused_categories()
@@ -147,7 +152,7 @@ def create_freight_ratio_satisfaction_df(
 
     return freight_ratio_satisfaction
 
-"""### Membuat Helper Function create_customer_delay_by_state_df"""
+### Membuat Helper Function create_customer_delay_by_state_df
 
 def create_customer_delay_by_state_df(
     df,
@@ -161,14 +166,14 @@ def create_customer_delay_by_state_df(
     )
 
     # Filter data dengan delivery status terlambat
-    df = df.assign(
+    orders_df_cust = orders_df_cust.assign(
         is_delayed=lambda x: x["delivery_status"] == "Terlambat"
     )
 
     # Kelompokkan berdasarkan customer state
     # Hitung delayed rate
     customer_delay_by_state = (
-        df.groupby("customer_state")
+        orders_df_cust.groupby("customer_state")
           .agg(
               total_orders=("order_id", "nunique"),
               delayed_orders=("is_delayed", "sum"),
@@ -182,7 +187,7 @@ def create_customer_delay_by_state_df(
 
     return customer_delay_by_state
 
-"""### Membuat Helper Function create_seller_density_by_state_df"""
+### Membuat Helper Function create_seller_density_by_state_df
 
 def create_seller_density_by_state_df(sellers_df):
     seller_density_by_state = (
@@ -196,7 +201,7 @@ def create_seller_density_by_state_df(sellers_df):
 
     return seller_density_by_state
 
-"""### Membuat Helper Function attach_geo_state_data"""
+### Membuat Helper Function attach_geo_state_data
 
 def attach_geo_state_data(
     geo_df,
@@ -216,7 +221,7 @@ def attach_geo_state_data(
 
     return merged_geo
 
-"""### Membuat Helper Function get_top_n_states"""
+### Membuat Helper Function get_top_n_states
 
 def get_top_n_states(df, metric_col, n=3):
     return (
@@ -224,112 +229,48 @@ def get_top_n_states(df, metric_col, n=3):
           .head(n)
     )
 
-"""### Load Data"""
+### Load Data
 
-@st.cache_data # Menghindari download berulang
-def load_data(url):
-    try:
-        df = pd.read_csv(url)
-        return df
-    except Exception as e:
-        st.error(f"Gagal memuat data dari {url}: {e}")
-        return None
-
-url_df = 'https://raw.githubusercontent.com/reginagsetiari/ecommerce-logistics-performance-dashboard/main/dashboard/orders_df_master.csv' 
-url_customers = 'https://raw.githubusercontent.com/reginagsetiari/ecommerce-logistics-performance-dashboard/main/dashboard/customers.csv'
-url_sellers = 'https://raw.githubusercontent.com/reginagsetiari/ecommerce-logistics-performance-dashboard/main/dashboard/sellers.csv' 
-
-# Panggil fungsi untuk masing-masing dataset
-df = load_data(url_df)
-customers_df = load_data(url_customers)
-sellers_df = load_data(url_sellers)
-
-"""## Membuat Komponen Widget
-
-### Membuat Filter Date Range
-"""
-
-# Date Range Filter
-st.sidebar.header("Filters")
-
-min_date = df["order_delivered_customer_date"].min()
-max_date = df["order_delivered_customer_date"].max()
-
-date_range = st.sidebar.date_input(
-    "Order Delivered Date Range",
-    value=(min_date, max_date),
-    min_value=min_date,
-    max_value=max_date
+df = pd.read_csv("orders_df_master.csv")
+df["order_delivered_customer_date"] = pd.to_datetime(
+    df["order_delivered_customer_date"],
+    errors="coerce"
+)
+customers_df = pd.read_csv("customers.csv")
+sellers_df = pd.read_csv("sellers.csv")
+brazil_states = gpd.read_file(
+    'https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson'
 )
 
-# Apply filter
-filtered_df = df[
-    (df["order_delivered_customer_date"] >= pd.to_datetime(date_range[0])) &
-    (df["order_delivered_customer_date"] <= pd.to_datetime(date_range[1]))
-]
-
-"""### Membuat Multiselect Delivery Status"""
-
-# Multiselect: Delivery Status
-selected_status = st.sidebar.multiselect(
-    "Delivery Status",
-    options=filtered_df["delivery_status"].unique(),
-    default=filtered_df["delivery_status"].unique()
-)
-
-# Apply filter
-filtered_df = filtered_df[
-    filtered_df["delivery_status"].isin(selected_status)
-]
-
-"""### Membuat Slider Freight to Price Ratio"""
-
-# Slider: Freight-to-Price Ratio
-ratio_range = st.sidebar.slider(
-    "Freight-to-Price Ratio (%)",
-    min_value=0,
-    max_value=100,
-    value=(0, 100),
-    step=5
-)
-
-# Apply filter
-filtered_df = filtered_df[
-    filtered_df["freight_price_ratio"].between(
-        ratio_range[0] / 100,
-        ratio_range[1] / 100
-    )
-]
-
-""" ### Memanggil Helper Function"""
+### Memanggil Helper Function
 
 monthly_delivery_composition = (
     create_monthly_delivery_composition_df(
-        filtered_df,
+        df,
         date_col="order_delivered_customer_date",
         min_order=75,
     )
 )
 review_by_delivery_status = (
-    create_review_by_delivery_status_df(filtered_df)
+    create_review_by_delivery_status_df(df)
 )
 review_by_delivery_status_and_category = (
     create_review_by_delivery_status_and_category_df(
-        filtered_df,
+        df,
         top_n=5,
         category_col="product_category_name_english"
     )
 )
 freight_ratio_satisfaction = (
     create_freight_ratio_satisfaction_df(
-        filtered_df,
+        df,
         exclude_bin=">100%",
         ratio_col="freight_ratio_bin",
     )
 )
 customer_delay_by_state = (
     create_customer_delay_by_state_df(
-        filtered_df,
+        df,
         customers_df,
     )
 )
@@ -352,23 +293,29 @@ geo_seller = (
         data_key="seller_state"
     )
 )
-top_n_states = (
+top_delayed_states = (
     get_top_n_states(
-        customer_delay_by_state,
+        geo_delayed,  
         metric_col="delayed_rate",
         n=3
     )
 )
+top_seller_states = (
+    get_top_n_states(
+        geo_seller,     
+        metric_col="seller_count",
+        n=3
+    )
+)
 
-"""## Melengkapi Dashboard dengan Berbagai Visualisasi Data
+## Melengkapi Dashboard dengan Berbagai Visualisasi Data
 
 ### Menambahkan Header
-"""
 
 # Tambahkan header
 st.header('Logistics Performance Analysis: Delivery Timeliness, Cost, and Customer Satisfaction')
 
-"""### Menambahkan Informasi Terkait Overall Health"""
+### Menambahkan Informasi Terkait Overall Health
 
 # Tampilkan informasi total delivered orders, delayed percentage, dan average review score
 st.subheader('Overall Health')
@@ -376,7 +323,7 @@ st.subheader('Overall Health')
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    total_orders = df["order_id"].nunique()
+    total_delivered_orders = df["order_id"].nunique()
     st.metric(
         label="Total Delivered Orders",
         value=f"{total_delivered_orders:,}"
@@ -398,15 +345,15 @@ with col3:
         value=f"{avg_review_score:.2f}"
     )
 
-"""### Menambahkan Informasi Terkait Operational Reability"""
+### Menambahkan Informasi Terkait Operational Reability
 
 # Tampilkan informasi tentang persentase performa pengiriman dan trennya seiring waktu
 st.subheader('Operational Reability')
 
-col1, col2 = st.columns(2)
+col1, col2 = st.columns([1, 2.5])
 
 with col1:
-    st.markdown("### Delivery Performance Composition")
+    st.markdown("### Delivery Mix")
 
     delivery_status_map = {
         "Terlambat": "Delayed",
@@ -414,32 +361,46 @@ with col1:
         "Tepat Waktu": "On-Time"
     }
 
+    status_order = ["Early", "On-Time", "Delayed"]
+    colors = ["#90CAF9", "#A5D6A7", "#EF9A9A"]
+
     delivery_perf = (
         df["delivery_status"]
           .map(delivery_status_map)
           .value_counts(normalize=True)
+          .reindex(status_order)
           .reset_index()
     )
 
     delivery_perf.columns = ["delivery_status", "percentage"]
 
-    fig, ax = plt.subplots(figsize=(5, 5))
+    fig, ax = plt.subplots(figsize=(4, 4))
 
     ax.pie(
         delivery_perf["percentage"],
-        labels=delivery_perf["delivery_status"],
-        autopct='%1.1f%%',
         startangle=90,
-        wedgeprops=dict(width=0.4)  # donut effect
+        colors=colors,
+        wedgeprops=dict(width=0.35, edgecolor="white")  # donut effect
     )
 
-    ax.set_title("Delivery Status Distribution")
-    st.pyplot(fig)
+    # Center text
+    ax.text(
+        0, 0,
+        "92%\nEarly",
+        ha="center",
+        va="center",
+        fontsize=14,
+        fontweight="bold"
+    )
+
+    ax.set_title("Delivery Status Distribution", pad=8)
+    ax.axis("equal")
+    st.pyplot(fig, width='stretch')
 
 with col2:
-    st.markdown("### Monthly Delivery Performance Trend")
+    st.markdown("### Monthly Delivery Trend")
 
-    fig, ax = plt.subplots(figsize=(14, 6))
+    fig, ax = plt.subplots(figsize=(12, 5))
 
     for col, label, color in [
         ("Lebih Cepat", "Early", "#81C784"),
@@ -471,10 +432,20 @@ with col2:
     ax.grid(axis="y", linestyle="--", alpha=0.5)
     ax.legend()
 
-    plt.tight_layout()
-    st.pyplot(fig)
+    fig.autofmt_xdate() # Otomatis merapikan tanggal yang miring di sumbu X
+    plt.tight_layout()  # Memastikan tidak ada label yang terpotong frame
+    
+    st.pyplot(fig, width='stretch')
+    st.markdown(
+        """
+        <p style="font-size: 10px; color: gray; line-height: 1;">
+        Note : Data only includes monthly order volumes above 75 to ensure sample validity.
+        </p>
+        """, 
+        unsafe_allow_html=True
+    )
 
-"""### Menambahkan Informasi Terkait Customer Experience Impact"""
+### Menambahkan Informasi Terkait Customer Experience Impact
 
 # Tampilkan informasi tentang pengaruh ketepatan pengiriman dan rasio ongkos kirim terhadap kepuasan pelanggan
 st.subheader('Customer Experience Impact')
@@ -484,11 +455,26 @@ col1, col2 = st.columns(2)
 with col1:
     st.markdown("### Impact of Delivery Timeliness")
 
+    delivery_order = ["Lebih Cepat", "Tepat Waktu", "Terlambat"]
+    review_by_delivery_status["delivery_status"] = pd.Categorical(
+        review_by_delivery_status["delivery_status"],
+        categories=delivery_order,
+        ordered=True
+    )
+    review_by_delivery_status = review_by_delivery_status.sort_values("delivery_status")
+
+
     fig, ax = plt.subplots(figsize=(6, 5))
 
-    ax.bar(
-        review_by_delivery_status["delivery_status"],
-        review_by_delivery_status["avg_review_score"]
+    sns.barplot(
+        x="delivery_status",
+        y="avg_review_score",
+        data=review_by_delivery_status,
+        hue="delivery_status",
+        errorbar=None,
+        palette='Set1',
+        legend=False,
+        ax=ax
     )
 
     # Anotasi
@@ -503,21 +489,32 @@ with col1:
         )
 
     ax.set_ylabel("Average Review Score")
+    ax.set_xlabel("")
     ax.set_ylim(0, 5)
+    ax.set_xticks(
+        ticks=[0, 1, 2],
+        labels=['Early', 'On-Time', 'Delayed']
+    )
     ax.set_title("Customer Satisfaction by Delivery Status")
     ax.grid(axis="y", linestyle="--", alpha=0.5)
 
-    st.pyplot(fig)
+    st.pyplot(fig, width='stretch')
 
 
 with col2:
     st.markdown("### Impact of Freight-to-Price Ratio")
 
-    fig, ax = plt.subplots(figsize=(6, 5))
+    fig, ax = plt.subplots(figsize=(6, 5.5))
 
-    ax.bar(
-        freight_ratio_satisfaction["ratio_col"],
-        freight_ratio_satisfaction["avg_review_score"]
+    sns.barplot(
+        data=freight_ratio_satisfaction,
+        x='freight_ratio_bin',
+        y='avg_review_score',
+        hue="freight_ratio_bin",
+        errorbar=None,
+        palette='Blues_r',
+        legend=False,
+        ax=ax
     )
 
     # Anotasi
@@ -528,7 +525,7 @@ with col2:
             f"{row['avg_review_score']:.2f}\n(n={row['order_count']:,})",
             ha="center",
             va="bottom",
-            fontsize=9
+            fontsize=6
         )
 
     # Benchmark line
@@ -537,26 +534,31 @@ with col2:
         overall_avg,
         linestyle="--",
         linewidth=1,
+        color='red',
         label=f"Overall Avg ({overall_avg:.2f})"
     )
 
     ax.set_ylabel("Average Review Score")
     ax.set_xlabel("Freight-to-Price Ratio")
     ax.set_ylim(3.8, 4.3)
-    ax.legend()
-    ax.grid(axis="y", linestyle="--", alpha=0.5)
+    ax.tick_params(axis='x', rotation=30, labelsize=10)
 
-    st.pyplot(fig)
+    ax.legend()
+    ax.set_title("The Effect of Freight-to-Price Ratio on Customer Satisfaction (0-100%)")
+    ax.grid(axis="y", linestyle="--", alpha=0.5)
+    st.pyplot(fig, width='stretch')
+    st.markdown(
+        """
+        <p style="font-size: 10px; color: gray; line-height: 1;">
+        Note: Orders with shipping cost ratio >100% are excluded from the visualization
+        as they are extreme cases and the amount is relatively small.
+        </p>
+        """, 
+        unsafe_allow_html=True
+    )
 
 # Tampilkan informasi tentang hubungan skor review dengan kategori produk dan status pengiriman
-heatmap_data = (
-    review_by_delivery_status_and_category
-        .pivot(
-            index="product_category_name_english",
-            columns="delivery_status",
-            values="avg_review_score"
-        )
-)
+heatmap_data = review_by_delivery_status_and_category.copy()
 
 delivery_status_map = {
    "Terlambat": "Delayed",
@@ -587,20 +589,21 @@ ax.set_title(
     fontsize=14,
     pad=12
 )
-ax.set_xlabel("Delivery Status")
-ax.set_ylabel("Product Category")
+ax.set_xlabel("Delivery Status", fontsize=10)
+ax.set_ylabel("Product Category", fontsize=10)
 
 plt.tight_layout()
-st.pyplot(fig)
+st.pyplot(fig, width='stretch')
 
 st.caption(
-    "Across all top product categories, delayed deliveries consistently lead to lower customer review scores. "
-    "This negative impact is universal, regardless of product type. While higher freight costs are tolerated "
-    "up to a certain threshold, delivery timeliness has a significantly stronger influence on overall "
-    "customer satisfaction."
+    ""
+    "Across all top product categories, delayed deliveries consistently lead to lower customer review scores, "
+    "notwithstanding that most orders actually arrive early. This negative impact is universal,"
+    "regardless of product type. While higher freight costs are tolerated up to a certain threshold, "
+    "delivery timeliness has a significantly stronger influence on overall customer satisfaction."
 )
 
-"""### Menambahkan Informasi Terkait Geographical Operational Risk"""
+### Menambahkan Informasi Terkait Geographical Operational Risk
 
 st.subheader("Geographical Operational Risk")
 
@@ -629,13 +632,13 @@ with col1:
             text=row["name"],
             xy=(centroid.x, centroid.y),
             xytext=(centroid.x + 3, centroid.y - 2.5),
-            arrowprops=dict(arrowstyle="->", lw=1),
+            arrowprops=dict(arrowstyle="->", lw=1, color='black'),
             fontsize=10,
             fontweight="bold",
             ha="left"
         )
 
-    st.pyplot(fig1)
+    st.pyplot(fig1, width='stretch')
 
 with col2:
     fig2, ax2 = plt.subplots(figsize=(8, 8))
@@ -660,18 +663,16 @@ with col2:
             text=row["name"],
             xy=(centroid.x, centroid.y),
             xytext=(centroid.x - 8, centroid.y - 5),
-            arrowprops=dict(arrowstyle="->", lw=1),
+            arrowprops=dict(arrowstyle="->", lw=1, color='black'),
             fontsize=10,
             fontweight="bold",
             ha="right"
         )
 
-    st.pyplot(fig2)
+    st.pyplot(fig2, width='stretch')
 
 st.caption(
     "Regions with higher delayed delivery rates tend to have lower seller density, "
     "indicating a structural logistics imbalance. Improving seller distribution or "
     "last-mile efficiency in these regions could significantly reduce delivery delays."
 )
-
-
