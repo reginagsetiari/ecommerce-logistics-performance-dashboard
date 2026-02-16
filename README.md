@@ -15,11 +15,26 @@ ratio affect customer review scores and operational performance.
 - Freight-to-price ratio tolerance threshold
 - Regional delay rate and seller density analysis
 
-
 ---
+
+## Setup Environment
+```
+cd submission
+pipenv install
+pipenv shell
+pip install -r requirements.txt
+
+```
 
 ## Run Streamlit App
 ```
+cd dashboard
 streamlit run dashboard/dashboard.py
+
+```
+
+## Dashboard Access
+```
+http://localhost:8501
 
 ```
