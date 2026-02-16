@@ -231,13 +231,13 @@ def get_top_n_states(df, metric_col, n=3):
 
 ### Load Data
 
-df = pd.read_csv("orders_df_master.csv")
+df = pd.read_csv("dashboard/orders_df_master.csv")
 df["order_delivered_customer_date"] = pd.to_datetime(
     df["order_delivered_customer_date"],
     errors="coerce"
 )
-customers_df = pd.read_csv("customers.csv")
-sellers_df = pd.read_csv("sellers.csv")
+customers_df = pd.read_csv("dashboard/customers.csv")
+sellers_df = pd.read_csv("dashboard/sellers.csv")
 brazil_states = gpd.read_file(
     'https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson'
 )
@@ -675,4 +675,5 @@ st.caption(
     "Regions with higher delayed delivery rates tend to have lower seller density, "
     "indicating a structural logistics imbalance. Improving seller distribution or "
     "last-mile efficiency in these regions could significantly reduce delivery delays."
+
 )
